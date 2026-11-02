@@ -28,6 +28,7 @@ body.dark .calendar{background:#332638}.date-trigger{cursor:pointer}
 @media(max-width:560px){body{padding:14px}.card{min-height:unset;padding:26px 20px;border-radius:24px}.choices{grid-template-columns:1fr}.choice{min-height:unset}.row{grid-template-columns:1fr}.topline{margin-bottom:12px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body class="dark">
 <main class="shell">
@@ -38,9 +39,11 @@ body.dark .calendar{background:#332638}.date-trigger{cursor:pointer}
 </main>
 <script>
 const app=document.getElementById('app'), progress=[...document.querySelectorAll('.dot')];
-// After deploying the Cloudflare Worker, replace this URL with its workers.dev URL.
-const EMAIL_API_URL='https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev';
-const state={step:0,activity:'',date:'',jalaliDate:'',time:'18:00',firstName:'',lastName:'',phone:'',city:'',placePref:'با هم انتخاب کنیم 🤝',cafe:'',note:'',noClicks:0,prevMsg:-1,submitted:false};
+// EmailJS: replace these placeholders with values from your EmailJS dashboard.
+emailjs.init({ publicKey: "xI6-0jhw0Id_Krbwh" });
+const EMAILJS_SERVICE_ID = "service_x2ibwjh";
+const EMAILJS_TEMPLATE_ID = "template_khjfw1n";
+const state={step:0,activity:'',date:'',jalaliDate:'',time:'۱۸:۰۰',city:'',placePref:'با هم انتخاب کنیم 🤝',cafe:'',note:'',firstName:'',lastName:'',phone:'',noClicks:0,prevMsg:-1,submitted:false};
 const jokes=['مطمئنی؟ من حتی منوی کافه رو هم بررسی کردم! 😂','یه فرصت کوچولو به این پیشنهاد بده دیگه 🥹','قلب من الان رفت تو حالت ذخیره باتری 💔','باشه... ولی قهوه بدون تو یه چیزی کم داره ☕','این دکمه داره از خجالت آب می‌شه! 😭','فقط یه کافه‌ست، نه جلسه دفاع پایان‌نامه! 😂','من و این پیشنهاد هنوز امید داریم! 🥲','یه آره کوچولو می‌تونه روز یکی رو بسازه 💗','سیستم به این نتیجه رسید که پیشنهاد ارزش بررسی داره! 🤖','دکمه نه استعفا داد، لطفاً با دکمه آره همکاری کن! 😂'];
 function faNum(s){return String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d])}
 function setStep(n){state.step=n;render()}
@@ -71,11 +74,8 @@ function jalaliToGregorian(input){
 }
 function details(){
   app.innerHTML=`<div class="eyebrow">مرحله‌ی سوم · جزئیات قرار</div><h1>حالا کی این قرار قشنگ رو برگزار کنیم؟ 📅</h1><p>یه روزی رو انتخاب کن که هم تو وقت داشته باشی، هم من بتونم برای یه روز خوب برنامه‌ریزی کنم.</p>
-  <div class="row">
-    <div class="field"><label for="firstName">نام</label><input id="firstName" type="text" autocomplete="given-name" maxlength="80" required placeholder="نام" value="${esc(state.firstName)}"></div>
-    <div class="field"><label for="lastName">نام خانوادگی</label><input id="lastName" type="text" autocomplete="family-name" maxlength="100" required placeholder="نام خانوادگی" value="${esc(state.lastName)}"></div>
-  </div>
-  <div class="field"><label for="phone">شماره تماس</label><input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="25" required placeholder="مثلاً 09123456789" value="${esc(state.phone)}"><small style="color:var(--muted)">شماره را با کد کشور یا به شکل معمول وارد کن.</small></div>
+  <div class="row"><div class="field"><label for="firstName">نام</label><input id="firstName" type="text" maxlength="60" autocomplete="given-name" required placeholder="نامت رو بنویس" value="${esc(state.firstName)}"></div><div class="field"><label for="lastName">نام خانوادگی</label><input id="lastName" type="text" maxlength="80" autocomplete="family-name" required placeholder="نام خانوادگی" value="${esc(state.lastName)}"></div></div>
+  <div class="field"><label for="phone">شماره تماس</label><input id="phone" type="tel" maxlength="20" autocomplete="tel" inputmode="tel" required placeholder="مثلاً 09123456789" value="${esc(state.phone)}"><small style="color:var(--muted)">اطلاعات تماس فقط برای هماهنگی همین پیشنهاد استفاده می‌شود.</small></div>
   <div class="field"><label for="date">تاریخ قرار (تقویم ایرانی)</label><input id="date" class="date-trigger" type="text" readonly autocomplete="off" placeholder="برای انتخاب تاریخ کلیک کن" value="${esc(state.jalaliDate||'')}" aria-haspopup="dialog" aria-expanded="false"><div class="calendar" id="calendar" role="dialog" aria-label="تقویم شمسی"><div class="cal-head"><button type="button" id="prevMonth" aria-label="ماه قبل">‹</button><span class="cal-title" id="calTitle"></span><button type="button" id="nextMonth" aria-label="ماه بعد">›</button></div><div class="cal-grid" id="calGrid"></div></div><small style="color:var(--muted)">برای انتخاب روز، روی تاریخ دلخواه در تقویم شمسی کلیک کن.</small></div>
   <div class="field"><label for="time">ساعت قرار</label><input id="time" type="time" value="${esc(state.time==='custom'?'18:00':state.time)}" step="300" aria-label="انتخاب ساعت قرار"><small style="color:var(--muted)">برای باز شدن انتخاب‌گر ساعت، روی کادر کلیک کن.</small></div>
 <div class="choices">${['تو کافه رو انتخاب کن ☕','من یه جای قشنگ پیشنهاد می‌دم 🌷','با هم انتخاب کنیم 🤝'].map(t=>`<button class="choice ${state.placePref===t?'selected':''}" data-pref="${t}"><strong>${t}</strong><span>${state.placePref===t?'انتخاب شده ✓':'برای انتخاب محل قرار'}</span></button>`).join('')}</div><div class="field"><label for="note">اگه چیزی هست که دوست داری درباره قرارمون بدونم، اینجا بنویس... 💭</label><textarea id="note" placeholder="مثلاً یه جای آروم دوست دارم، یا حتماً باید دسر بخوریم! 🍰">${esc(state.note)}</textarea></div><div class="message" id="err"></div><div class="actions"><button class="btn primary" id="next">بریم خلاصه قرارمون رو ببینیم! ✨</button></div>`;
@@ -113,12 +113,16 @@ function details(){
   document.getElementById('nextMonth').onclick=()=>{shown.month++;if(shown.month>12){shown.month=1;shown.year++}renderCalendar()};
   app.querySelectorAll('[data-pref]').forEach(b=>b.onclick=()=>{saveDetails();state.placePref=b.dataset.pref;render()});
   document.getElementById('next').onclick=()=>{
+    state.firstName=document.getElementById('firstName').value.trim();
+    state.lastName=document.getElementById('lastName').value.trim();
+    state.phone=document.getElementById('phone').value.trim();
     saveDetails();
-    const converted=jalaliToGregorian(state.jalaliDate);
     const err=document.getElementById('err');
-    if(!state.firstName || !state.lastName || !state.phone){err.textContent='لطفاً نام، نام خانوادگی و شماره تماس را کامل کن.';return}
-    const normalizedPhone=state.phone.replace(/[\s()-]/g,'');
-    if(!/^\+?[0-9۰-۹٠-٩]{7,20}$/.test(normalizedPhone)){err.textContent='لطفاً شماره تماس معتبر وارد کن.';return}
+    if(!state.firstName||!state.lastName||!state.phone){err.textContent='لطفاً نام، نام خانوادگی و شماره تماس را وارد کن.';return}
+    const phoneDigits=normalizeDigits(state.phone).replace(/[\s()+.-]/g,'');
+    if(!/^\d{7,15}$/.test(phoneDigits)){err.textContent='لطفاً شماره تماس معتبر وارد کن.';return}
+    state.phone=phoneDigits;
+    const converted=jalaliToGregorian(state.jalaliDate);
     if(!converted){err.textContent='لطفاً تاریخ را از تقویم شمسی انتخاب کن.';return}
     const today=new Date(); today.setHours(0,0,0,0);
     const chosen=new Date(`${converted.iso}T00:00:00`);
@@ -135,17 +139,45 @@ function currentJalaliMonth(){
   return {year:p.year,month:p.month};
 }
 function saveDetails(){
-  const firstNameInput=document.getElementById('firstName'); if(firstNameInput) state.firstName=firstNameInput.value.trim();
-  const lastNameInput=document.getElementById('lastName'); if(lastNameInput) state.lastName=lastNameInput.value.trim();
-  const phoneInput=document.getElementById('phone'); if(phoneInput) state.phone=phoneInput.value.trim();
+  const firstNameInput=document.getElementById('firstName');
+  const lastNameInput=document.getElementById('lastName');
+  const phoneInput=document.getElementById('phone');
+  if(firstNameInput) state.firstName=firstNameInput.value.trim();
+  if(lastNameInput) state.lastName=lastNameInput.value.trim();
+  if(phoneInput) state.phone=phoneInput.value.trim();
   const dateInput=document.getElementById('date');
   if(dateInput) state.jalaliDate=dateInput.value.trim();
   state.note=document.getElementById('note')?.value||'';
   let t=document.getElementById('time');
   if(t && t.value) state.time=t.value;
 }
-function summary(){app.innerHTML=`<div class="eyebrow">مرحله‌ی چهارم · مرور نهایی</div><h1>خب، پس داریم یه خاطره قشنگ می‌سازیم! 💗</h1><div class="summary"><div><span>نام و نام خانوادگی</span><b>${esc((state.firstName+' '+state.lastName).trim()||'—')}</b></div><div><span>شماره تماس</span><b>${esc(state.phone||'—')}</b></div><div><span>تعداد انتخاب «نه»</span><b>${faNum(state.noClicks)}</b></div><div><span>مدل قرار</span><b>${esc(state.activity)}</b></div><div><span>تاریخ انتخابی</span><b>${esc(state.jalaliDate||'—')}</b></div><div><span>ساعت</span><b>${esc(state.time)}</b></div><div><span>شهر یا محله</span><b>—</b></div><div><span>ترجیح محل</span><b>${esc(state.placePref)}</b></div>${state.note?`<div><span>یادداشت</span><b>${esc(state.note)}</b></div>`:''}</div><p>پس فعلاً قرارمون اینه:<br>یه روز قشنگ، یه جای دنج، یه نوشیدنی خوشمزه و دو نفر که قراره چند ساعت از روزشون رو به هم اختصاص بدن. ☕🌷<br><br>حالا دیگه باید منتظر یه روز خوب باشیم!</p><div class="message" id="err"></div><div class="actions"><button class="btn secondary" id="edit">می‌خوام تغییرش بدم</button><button class="btn primary" id="submit">همه‌چی درسته، ثبتش کن! 💌</button></div><p class="note">این فقط یک پیشنهاد برای قرار است؛ تاریخ نهایی وقتی قطعی می‌شود که هر دو نفر موافق باشند.</p>`;document.getElementById('edit').onclick=()=>setStep(3);document.getElementById('submit').onclick=async()=>{const btn=document.getElementById('submit'),err=document.getElementById('err');btn.disabled=true;btn.textContent='در حال ارسال…';err.textContent='';const controller=new AbortController();const timeoutId=setTimeout(()=>controller.abort(),12000);try{const response=await fetch(EMAIL_API_URL,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},signal:controller.signal,body:JSON.stringify({first_name:state.firstName,last_name:state.lastName,phone:state.phone,no_click_count:state.noClicks,activity:state.activity,date_jalali:state.jalaliDate,date_gregorian:state.date,time:state.time,place_preference:state.placePref,note:state.note||'بدون توضیح',invitation_response:'آره، چرا که نه!',website:''})});const raw=await response.text();let data={};try{data=JSON.parse(raw)}catch{}if(!response.ok||data.success===false){throw new Error(data.error||data.message||'ارسال ایمیل انجام نشد. تنظیمات سرویس ایمیل را بررسی کن.')}state.submissionId='';state.emailSent=true;state.submitted=true;setStep(5)}catch(e){if(e.name==='AbortError'){err.textContent='پاسخ سرویس ایمیل تا ۱۲ ثانیه دریافت نشد. ممکن است درخواست هنوز در حال پردازش باشد؛ پیش از تلاش دوباره، ایمیل را بررسی کن تا پیام تکراری ارسال نشود.'}else{err.textContent=e.message||'ارسال انجام نشد. اتصال اینترنت را بررسی کن و دوباره تلاش کن.'}btn.disabled=false;btn.textContent='دوباره تلاش کن 💌'}finally{clearTimeout(timeoutId)}}}
-function success(){progress.forEach(d=>d.classList.add('active'));app.innerHTML=`<div class="confetti">💗 ✨ ☕ ✨ 💗</div><h1>پیشنهاد قرارمون ثبت شد! 🥹💗</h1><p>حالا دیگه باید برای یه روز قشنگ برنامه‌ریزی کنیم!<br><br>${state.emailSent?'اطلاعات برای ارسال به سرویس ایمیل تحویل داده شد.':'اطلاعات برای ارسال ثبت شد.'}<br><small>این تاریخ پیشنهادی است و وقتی قطعی می‌شود که هر دو نفر موافق باشند.</small></p><div class="summary"><div><span>قرار پیشنهادی</span><b>${esc(state.activity)}</b></div><div><span>تاریخ انتخابی</span><b>${esc(state.jalaliDate||state.date)}</b></div><div><span>ساعت</span><b>${esc(state.time)}</b></div></div><div class="actions"><button class="btn primary" id="restart">شروع دوباره 💌</button></div>`;document.getElementById('restart').onclick=()=>{Object.assign(state,{step:0,activity:'',date:'',jalaliDate:'',time:'18:00',firstName:'',lastName:'',phone:'',city:'',placePref:'با هم انتخاب کنیم 🤝',cafe:'',note:'',noClicks:0,prevMsg:-1,submitted:false,submissionId:'',emailSent:false});setStep(0)}}
+function summary(){app.innerHTML=`<div class="eyebrow">مرحله‌ی چهارم · مرور نهایی</div><h1>خب، پس داریم یه خاطره قشنگ می‌سازیم! 💗</h1><div class="summary"><div><span>نام و نام خانوادگی</span><b>${esc(state.firstName+' '+state.lastName)}</b></div><div><span>شماره تماس</span><b>${esc(state.phone)}</b></div><div><span>تعداد دفعات انتخاب «نه»</span><b>${faNum(state.noClicks)}</b></div><div><span>مدل قرار</span><b>${esc(state.activity)}</b></div><div><span>تاریخ انتخابی</span><b>${esc(state.jalaliDate||'—')}</b></div><div><span>ساعت</span><b>${esc(state.time)}</b></div><div><span>شهر یا محله</span><b>—</b></div><div><span>ترجیح محل</span><b>${esc(state.placePref)}</b></div>${state.note?`<div><span>یادداشت</span><b>${esc(state.note)}</b></div>`:''}</div><p>پس فعلاً قرارمون اینه:<br>یه روز قشنگ، یه جای دنج، یه نوشیدنی خوشمزه و دو نفر که قراره چند ساعت از روزشون رو به هم اختصاص بدن. ☕🌷<br><br>حالا دیگه باید منتظر یه روز خوب باشیم!</p><div class="message" id="err"></div><div class="actions"><button class="btn secondary" id="edit">می‌خوام تغییرش بدم</button><button class="btn primary" id="submit">همه‌چی درسته، ثبتش کن! 💌</button></div><p class="note">این فقط یک پیشنهاد برای قرار است؛ تاریخ نهایی وقتی قطعی می‌شود که هر دو نفر موافق باشند.</p>`;document.getElementById('edit').onclick=()=>setStep(3);document.getElementById('submit').onclick=async()=>{const btn=document.getElementById('submit'),err=document.getElementById('err');btn.disabled=true;btn.textContent='در حال ارسال…';err.textContent='';try {
+  await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    first_name: state.firstName || "ثبت نشده",
+    last_name: state.lastName || "ثبت نشده",
+    full_name: (state.firstName+' '+state.lastName).trim() || "ثبت نشده",
+    phone: state.phone || "ثبت نشده",
+    no_clicks: String(state.noClicks),
+    activity: state.activity || "ثبت نشده",
+    date_jalali: state.jalaliDate || "ثبت نشده",
+    date_gregorian: state.date || "ثبت نشده",
+    time: state.time || "ثبت نشده",
+    place_preference: state.placePref || "ثبت نشده",
+    note: state.note || "بدون توضیح",
+    invitation_response: "آره، چرا که نه!"
+  });
+
+  state.submissionId = "";
+  state.emailSent = true;
+  state.submitted = true;
+  setStep(5);
+} catch (e) {
+  console.error("EmailJS send error:", e);
+  err.textContent = "ارسال ایمیل انجام نشد. شناسه‌های EmailJS، اتصال اینترنت و تنظیمات قالب را بررسی کن.";
+  btn.disabled = false;
+  btn.textContent = "دوباره تلاش کن 💌";
+}}}
+function success(){progress.forEach(d=>d.classList.add('active'));app.innerHTML=`<div class="confetti">💗 ✨ ☕ ✨ 💗</div><h1>پیشنهاد قرارمون ثبت شد! 🥹💗</h1><p>حالا دیگه باید برای یه روز قشنگ برنامه‌ریزی کنیم!<br><br>${state.emailSent?'اطلاعات برای ارسال به سرویس ایمیل تحویل داده شد.':'اطلاعات برای ارسال ثبت شد.'}<br><small>این تاریخ پیشنهادی است و وقتی قطعی می‌شود که هر دو نفر موافق باشند.</small></p><div class="summary"><div><span>قرار پیشنهادی</span><b>${esc(state.activity)}</b></div><div><span>تاریخ انتخابی</span><b>${esc(state.jalaliDate||state.date)}</b></div><div><span>ساعت</span><b>${esc(state.time)}</b></div></div><div class="actions"><button class="btn primary" id="restart">شروع دوباره 💌</button></div>`;document.getElementById('restart').onclick=()=>{Object.assign(state,{step:0,activity:'',date:'',jalaliDate:'',time:'۱۸:۰۰',city:'',placePref:'با هم انتخاب کنیم 🤝',cafe:'',note:'',firstName:'',lastName:'',phone:'',noClicks:0,prevMsg:-1,submitted:false,submissionId:'',emailSent:false});setStep(0)}}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 document.getElementById('themeBtn').onclick=()=>{document.body.classList.toggle('dark');document.getElementById('themeBtn').textContent=document.body.classList.contains('dark')?'☀️ حالت روشن':'🌙 حالت شب'};
 render();
